@@ -1,0 +1,35 @@
+---
+title: "Rose: RAG over a memoir"
+description: "Question answering over a personal memoir with hybrid search, reranking and a knowledge graph."
+categories: [RAG, Knowledge graphs, LLMs]
+---
+
+**Code:** [ZacharyCosenza/project-rose](https://github.com/ZacharyCosenza/project-rose)
+
+## What it does
+
+You ask a question about a personal memoir; Rose retrieves the relevant passages and answers with sources.
+
+## Retrieval pipeline
+
+```
+question
+  → hybrid search: 75% semantic (MiniLM embeddings) + 25% BM25 → top 25 chunks
+  → cross-encoder rerank → top 12 chunks
+  → knowledge-graph augmentation → up to 15 relevant (subject, predicate, object) triples
+  → LLM answer (Llama 3.3 70B on Groq) with source references
+```
+
+## Building the index and the graph
+
+- Each chunk is **contextualized by an LLM** before embedding, so short lines like "He moved there in
+  1952" carry who and where.
+- An LLM extracts triples per chunk. They're then hard-filtered against a fixed list of 26 predicates and
+  per-predicate type rules (for example, kinship must be person → person), and self-references are dropped.
+- Entities are deduplicated by embedding each one with its **predicate signature** rather than the
+  surrounding text. That stops entities that merely co-occur from being merged.
+
+## Evaluation
+
+On a 30-question evaluation set with the knowledge graph enabled, Rose answered **63%** correctly overall:
+80% of easy questions, 55% of medium and 55% of hard.
