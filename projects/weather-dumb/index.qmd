@@ -40,9 +40,11 @@ A typical hour is off by about 7 °F (9 °F RMSE, R² 0.80). Shuffling the data 
 
 ## The features
 
-The model is an XGBoost regressor over 22 features. Ranked by how much each one can move its forecast, five proxies do most of the work. Below that, each feature's raw relationship with the weather: one dot per day, with its correlation (r) to the actual temperature. Correlation only catches straight-line relationships, so U-shapes like grid load (heating in winter, AC in summer) score lower than they deserve.
+The model is an XGBoost regressor over 22 features. SHAP splits each hourly forecast into how much each feature pushed it warmer or colder. Heat complaints, bikes, grid load and the Mets do most of the work:
 
-![](swing.png)
+![](shap.png)
+
+Below, each feature's raw relationship with the weather: one dot per day, with its correlation (r) to the actual temperature. Correlation only catches straight-line relationships, so U-shapes like grid load (heating in winter, AC in summer) score lower than they deserve.
 
 ### 311 heat complaints
 
@@ -203,15 +205,6 @@ The model is an XGBoost regressor over 22 features. Ranked by how much each one 
 <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
 <video src="features/restaurant_inspections.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
 <img src="features/restaurant_inspections.png" style="width:300px;height:300px">
-</div>
-```
-
-### HPD housing violations
-
-```{=html}
-<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
-
-<img src="features/hpd.png" style="width:300px;height:300px">
 </div>
 ```
 

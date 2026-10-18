@@ -57,7 +57,3 @@ flowchart LR
 - **Networking.** Everything is reached over Tailscale, so there's no port forwarding or public IP. The Argo UI and MLflow are served privately over the tailnet.
 - **Storage.** Pods write straight to the desktop's disk through a `hostPath` mount, with no object storage.
 - **Output.** A public GitHub Pages dashboard plus scheduled summaries like *"NYC 311 forecast for the week of 2026-08-17: 12 MANHATTAN is expected to see the most call activity (~1,340 calls)…"*
-
-## A detail I liked
-
-The "biggest mover" alert compares each district's forecast with its own trailing 4-week average (picked from a sweep over 1 to 26 weeks). One Bronx district topped the list in 58% of all weeks because of a recurring residential-noise reporting artifact, and a plain magnitude cutoff couldn't tell it apart from a real snowstorm week. What could was **isolation**: the artifact spikes alone, while a storm lifts many districts at once. So a district only gets capped when it's both an extreme outlier and uncorroborated by at least 5 other districts that week.

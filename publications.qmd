@@ -10,44 +10,44 @@ Mostly from my PhD at UC Davis, where I used Bayesian optimization and other seq
 **[Multi-objective Bayesian algorithm automatically discovers low-cost high-growth serum-free media for cellular agriculture application](https://doi.org/10.1002/elsc.202300005)**\
 **Z Cosenza**, DE Block, K Baar, X Chen · *Engineering in Life Sciences* 23(8), 2023 · [PDF](https://pmc.ncbi.nlm.nih.gov/articles/PMC10390662/)
 
-Serum-free media for cultivated meat need to be both cheap and good at growing cells, two goals that pull against each other. We used multi-information-source Bayesian optimization with a hypervolume-improvement acquisition to learn that cost/growth trade-off for C2C12 muscle cells from batches of custom media experiments. It found several media that beat the control, including one with 23% more growth at 62.5% of the cost.
+Multi-objective Bayesian optimization found a serum-free medium with 23% more muscle cell growth at 62.5% of the control's cost.
 
 **[Multi-information source Bayesian optimization of culture media for cellular agriculture](https://doi.org/10.1002/bit.28132)**\
 **Z Cosenza**, R Astudillo, PI Frazier, K Baar, DE Block · *Biotechnology and Bioengineering* 119(9), 2447–2458, 2022 · [PDF](https://par.nsf.gov/servlets/purl/10356150)
 
-Fast cell-growth assays are convenient but noisy, while accurate cell counts are slow enough to limit how many experiments you can run. We combined both kinds of measurement in a multi-information-source Bayesian optimization of a 14-component medium, guided by an uncertainty-weighted desirability function. The result grew 181% more cells than a common commercial medium at similar cost, in 38% fewer experiments than an efficient design-of-experiments method, and held up over four passages.
+Combining fast-but-noisy and slow-but-accurate growth assays in Bayesian optimization produced a medium with 181% more cells than a commercial one at similar cost, in 38% fewer experiments.
 
 **[Stability-based optimization of ACRT for the growth of CZT by the traveling heater method](https://doi.org/10.1016/j.jcrysgro.2021.126446)**\
 JH Peterson, **Z Cosenza**, JJ Derby · *Journal of Crystal Growth* 579, 126446, 2022 · [PDF](https://www.osti.gov/pages/servlets/purl/1866967)
 
-Cadmium zinc telluride crystals for radiation detectors are grown by the traveling heater method, and spinning the crucible (ACRT) is used to mix the melt and reduce defects. We modeled ACRT schedules numerically and introduced a measure of disturbances at the growth interface to judge which schedules actually stabilize growth. Interface stability turned out to be poorly correlated with melt undercooling, and the most stable schedules strengthened outward Ekman flow on spin-up while suppressing Taylor–Görtler flow on spin-down.
+Modeling crucible-rotation schedules for growing CZT detector crystals showed that the most stable growth comes from strengthening spin-up Ekman flow, not from reducing melt undercooling.
 
 **[Optimization of muscle cell culture media using nonlinear design of experiments](https://doi.org/10.1002/biot.202100228)**\
 **Z Cosenza**, DE Block, K Baar · *Biotechnology Journal* 16(11), 2100228, 2021 · [PDF](https://par.nsf.gov/servlets/purl/10296836)
 
-Media optimization is hard: many components, nonlinear interactions and expensive experiments. We used a hybrid of a local coordinate search and a global genetic algorithm with a radial-basis-function surrogate to cut the cost of a 30-component muscle cell proliferation medium while keeping 48-hour growth, in 70 experiments versus 103 for a traditional design of experiments. The optimized medium didn't hold up over multiple passages, a good lesson in choosing an objective that matches the real process goal.
+A hybrid coordinate-search/genetic-algorithm optimizer cut the cost of a 30-component muscle cell medium in 70 experiments versus 103 for a traditional design of experiments.
 
 **[Considerations for the development of cost-effective cell culture media for cultivated meat production](https://doi.org/10.1111/1541-4337.12678)**\
 EN O'Neill, **ZA Cosenza**, K Baar, DE Block · *Comprehensive Reviews in Food Science and Food Safety* 20(1), 686–709, 2021 · [PDF](https://zenodo.org/records/7754223/files/ONeill_2020Media_Postprint.pdf)
 
-Animal cell culture media have been refined for a century, but mostly for products like therapeutic antibodies that sell for orders of magnitude more than meat. This review lays out what cultivated meat media need instead: food grade, low cost, animal-ingredient free, and able to drive large-scale proliferation and differentiation. It draws on conventional culture media, the metabolic pathways behind muscle growth, and optimization practice from large-scale microbial fermentation.
+A review of what cultivated meat media need (food grade, low cost, animal-free) and what can be borrowed from biopharma, muscle biology and fermentation.
 
 **[A generalizable hybrid search framework for optimizing expensive design problems using surrogate models](https://doi.org/10.1080/0305215X.2020.1826466)**\
 **Z Cosenza**, DE Block · *Engineering Optimization* 53(10), 1772–1785, 2021
 
-Physical and biological experiments are expensive to run, so optimizing them means modeling as you go. We built a hybrid surrogate framework that pairs a radial-basis-function/genetic-algorithm search with dynamic coordinate search, and tested it on 20 simulated high-dimensional, nonlinear design problems. The hybrid did at least as well as its component methods on 19 of 20, and improved further when the problems included simulated noise.
+A hybrid surrogate-model search framework matched or beat its component methods on 19 of 20 expensive, high-dimensional test problems.
 
 **[Cultivated Meat Modeling Consortium: inaugural meeting whitepaper](https://doi.org/10.22541/au.158057683.31004563)**\
 S Kahan, J Camphuijsen, C Cannistra, G Potter, **Z Cosenza**, I Shmulevich · *Authorea*, 2020 · [PDF](https://doi.org/10.22541/au.158057683.31004563)
 
-Cultivated meat could be a more sustainable source of protein, and computational modeling could shorten the road to commercial production. This whitepaper came out of the first Cultivated Meat Modeling Consortium meeting in Seattle in June 2019. It sketches an early multiscale modeling framework for cultivated meat manufacturing, meant to start collaborations rather than settle answers.
+Whitepaper from the first Cultivated Meat Modeling Consortium meeting, sketching a multiscale modeling framework for cultivated meat manufacturing.
 
 ## Dissertation
 
 **[Sequential learning methods for the experimental optimization of cell culture media for cellular agriculture](https://escholarship.org/uc/item/119489fc)**\
 **ZA Cosenza** · PhD dissertation, University of California, Davis, 2022
 
-My dissertation ties the papers above together: design-of-experiments and sequential learning methods that learn good media formulations a few experiments at a time. It covers the multi-information-source Bayesian optimization result (181% more growth than a commercial medium at similar cost, in 38% fewer experiments) and the serum-free growth/cost trade-off work. The goal throughout is media for cultivated meat, where cost decides whether the product is viable at all.
+Sequential learning and Bayesian optimization methods for designing cell culture media for cultivated meat in as few lab experiments as possible.
 
 ## Talks
 
