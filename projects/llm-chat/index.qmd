@@ -1,12 +1,12 @@
 ---
 title: "ZAC-GPT-2: an LLM from scratch"
-description: "A ~500M-parameter GPT-2-style model taken through pre-training, mid-training, SFT, DPO and code RL, and everything that went wrong along the way."
+description: "A ~500M-parameter GPT-2-style model taken through pre-training, mid-training, four flavors of SFT and DPO, and everything that went wrong along the way."
 image: pretrain_loss.png
 ---
 
 **Code:** [ZacharyCosenza/project-llm-chat](https://github.com/ZacharyCosenza/project-llm-chat)
 
-The goal here was to learn (1) large(ish)-scale training, including multi-step training (pre/mid/fine-tune/RL) and how model abilities change along the way, and (2) how to make the thing somewhat interactive. I used Andrej Karpathy's [nanochat](https://github.com/karpathy/nanochat) as a starting point, but a big part of the value was struggling with unfamiliar topics myself rather than copying working code. The result is ZAC-GPT-2: a ~500M-parameter GPT-2-style transformer (20 layers, width 1280, 2048-token context) trained on 4× H100s.
+The goal here was to learn (1) large(ish)-scale training, including multi-step training (pre-train, mid-train, fine-tune, preference tuning) and how model abilities change along the way, and (2) how to make the thing somewhat interactive. I used Andrej Karpathy's [nanochat](https://github.com/karpathy/nanochat) as a starting point, but a big part of the value was struggling with unfamiliar topics myself rather than copying working code. The result is ZAC-GPT-2: a ~500M-parameter GPT-2-style transformer (20 layers, width 1280, 2048-token context) trained on 4× H100s.
 
 ## The scripts
 
@@ -21,9 +21,8 @@ Each `run_*.py` is a snapshot of where the project was, and each one adds a thin
 | `run_8` | The CORE benchmark for evaluation |
 | `run_9` | Special tokens (BOS, pad, user/assistant/system roles) |
 | `run_10` | Training modes: pretrain / midtrain on conversation data |
-| `run_11` | SFT: assistant-only loss mask, BOS-aligned packing |
+| `run_11` | SFT: assistant-only loss mask, BOS-aligned packing, plus the LIMA, benchmark and topic-switch modes |
 | `run_12` | DPO with a frozen reference model |
-| `run_13` | Code RL: online REINFORCE with a Python execution reward |
 
 ## Sizing pre-training
 
@@ -59,15 +58,69 @@ After mid-training I noticed my CORE score was stuck at ~0.19 and went back thro
 
 Lesson learned: be very detailed about dataset sizes and check them against the spec.
 
+## Seven stages, one model
+
+Everything after pre-training is the same model with a different data mix and a smaller learning rate. Each `run_*.py` added a mode to the same training loop:
+
+![](stages.png)
+
+## Packing: getting the most out of a 2048-token row
+
+How documents get squeezed into fixed-length rows matters more than I expected. Pre-training streams tokens continuously and cuts wherever a row fills up, which is fine for web text. My first mid-training session instead padded each conversation out to 2048 tokens, so a big chunk of every batch was padding and the session only delivered ~50% of the tokens I wanted. SFT (`run_11`) uses BOS-aligned packing: whole conversations go into a row back to back, and only the leftover tail is padded, so a conversation never gets cut in half.
+
+![](packing.png)
+
+## Special tokens and loss masking
+
+To make the model chat, `run_9` added five special tokens: `<|beginoftext|>`, `<|pad|>`, `<|user|>`, `<|assistant|>` and `<|system|>`. A conversation becomes one token stream with role markers. The important trick (`run_11`) is the loss mask: during SFT the model is only graded on the assistant's reply, plus the `<|user|>` token that closes its turn, so it learns *when to stop talking*.
+
+![](masking.png)
+
+During mid-training I was still backpropagating loss on the user and system tokens too. That's probably why the mid-trained model liked to imitate the user, and why it never learned a clean "end of turn".
+
 ## Mid-training
 
-Mid-training introduces special tokens and conversation data: 30% FineWeb-Edu (so the model doesn't forget what it learned) and 70% SmolTalk/UltraChat. The first session's CORE was noisy and flat. It turned out (i) very few sequences made up the CORE score and (ii) I was padding each conversation instead of packing them together, so the session was really only ~50% of the tokens I wanted. Session 2 used packing.
+Mid-training is where the special tokens and conversations first show up: 30% FineWeb-Edu (so the model doesn't forget what it learned) and 70% synthetic conversations from SmolTalk and UltraChat. A SmolTalk example:
 
-Chatting with the result, the model (i) lies, (ii) runs on forever, and (iii) imitates the user. I was also backpropagating loss on user and system tokens, which probably explains (iii).
+```
+<|user|>  Vincent's washer broke so he had to go to the laundromat. On Wednesday he
+          washed six loads of clothes. The next day he washed double ...
+<|assistant|>  On Wednesday, Vincent washed 6 loads of clothes. On Thursday, he washed
+          double the number of loads ... so he washed 6 * 2 = 12 loads. ...
+```
 
-## SFT
+Chatting with the result, the model (i) lies, (ii) runs on forever, and (iii) imitates the user. (ii) and (iii) are what SFT is for.
 
-SFT trains only on the assistant's tokens (an assistant-only loss mask) and packs each chunk starting at a conversation boundary. Three passes: SmolTalk/UltraChat for 10k iterations, a quick LIMA fine-tune, then MMLU + GSM8K converted to Q&A. After the first pass it was a much better conversational partner. It was still dumb (missing ~40% of pre-training), but it held a conversation. Two problems remained, (1) it couldn't switch topics and (2) it repeated itself:
+## SFT, four ways
+
+**(1) The main pass** (`sft`, 10K steps): 65% SmolTalk and 35% UltraChat, with the assistant-only mask. Validation loss moves only a little, but the model became a much better conversational partner. Still dumb, missing ~40% of pre-training, but it held a conversation.
+
+**(2) LIMA** (`sft-lima`): about 1,000 hand-curated conversations, run for 3 epochs, which is only ~70 iterations. The idea from the LIMA paper is that a small set of high-quality examples teaches *style*:
+
+```
+<|user|>  What if the moon had never formed?
+<|assistant|>  The moon was critical to the formation of life as we know it. The huge
+          tides generated by the moon's gravity allowed chemical building blocks to mix ...
+```
+
+**(3) Benchmarks** (`sft-benchmark`, 1K steps): MMLU multiple choice and GSM8K math, converted into Q&A. Both get a trailing empty user turn, so every example ends exactly like a real assistant turn does. GSM8K also teaches calculator-style tool calls with `<<...>>`:
+
+```
+<|user|>  Multiple Choice question: A mouse is made up of
+          - straw=A  - organic material=B  - dairy=C  - buttons=D
+<|assistant|>  organic material
+
+<|user|>  They planted 3 times as many peaches as apricots. If 58 apricot trees were
+          planted, how many trees were planted in total?
+<|assistant|>  The number of peaches planted is 3*58 = <<3*58=174>>174
+          In total, the family planted 174+58 = <<174+58=232>>232 trees  #### 232
+```
+
+This is where validation loss actually moves, mostly because the model is learning the answer *format*:
+
+![](sft_val.png)
+
+**(4) Topic switching** (`sft-topic-switch`). After SFT the model had two habits I wanted gone. It couldn't change subjects (ask about Germany right after a poem about a car and you get the car poem again), and it repeated itself:
 
 ```
 You: Write a short poem about a boat.
@@ -76,20 +129,31 @@ A boat that moves with grace,
 A city's spirit moves with grace,
 A boat that moves with grace,
 A boat that moves with grace,
-A boat that moves with grace,
 ```
 
-I built a small topic-switching dataset for (1). Around here I also noticed that the warmup/cosine schedule was computed from `max_steps`, which I kept adding onto across resumed runs, so those runs never actually did warmup properly. Also fixed.
+So I generated a dataset (100K conversations) that stitches together turns from *different* conversations of the same source (MMLU, GSM8K or SmolTalk), with a 50% chance of jumping to a new conversation after every turn. A real example hops from converting strings to integers, to writing a Python function, to a news API call, to editing an essay, all in one chat. Since every example is a dense signal of the behavior I wanted, I only ran it for ~100 iterations.
+
+I also noticed around here that warmup and cosine decay were computed from `max_steps`, which I kept adding onto across resumed runs, so those runs never actually did warmup properly. Also fixed.
 
 ## DPO
 
-DPO uses UltraFeedback and HH-RLHF chosen/rejected pairs, with a frozen copy of the model as the reference. Getting it to fit in memory was its own adventure. There were four separate OOMs, all from accidentally materializing `[batch, time, vocab]` tensors (dtype casts, `log_softmax`, `logsumexp`'s backward), plus running the reference forward pass after the policy instead of before. The 6k-iteration run made the model way too yappy, so I redid it at 1k iterations, which was better at switching topics and a more helpful assistant overall.
+Direct preference optimization (`run_12`) trains on pairs of answers to the same prompt, one *chosen* and one *rejected*, from UltraFeedback (60%) and HH-RLHF (40%):
 
-## Code RL
+```
+<|user|>  Can you give me a recipe for pumpkin pie?
+chosen:   Sure! I know a really good pumpkin pie recipe, and I know the ingredients and
+          process needed to make it. Would you like me to walk you through it?
+rejected: I could give you a recipe for pumpkin pie.
+```
 
-Last up was online REINFORCE: generate code, run it, reward correct output (1/3 calculator problems, 1/3 HumanEval, 1/3 MBPP). Two short runs made no noticeable difference. There's only so much you can do with an undertrained dumb model.
+The loss pushes the model to make the chosen answer more likely *relative to a frozen copy of itself* (β = 0.1, learning rate 1e-6), so it can't drift too far from what it already knows. Each step needs a policy pass and a reference pass on both answers, and fitting that in memory was its own adventure. There were four separate OOMs, all variations on accidentally building a `[batch, time, vocab]` tensor:
 
-## Post-training at a glance
+1. Casting the logits to fp32 kept a second full copy alive.
+2. `log_softmax` materializes the whole vocabulary. The fix was gathering the chosen token's logit and subtracting `logsumexp` instead.
+3. `logsumexp`'s backward does the same thing. The fix was computing log-probs one sequence at a time, which cut peak memory from ~3.5 GB to ~400 MB.
+4. The reference forward pass ran after the policy pass while the policy's ~40 GB activation graph was still alive. The fix was running the no-grad reference pass first.
+
+The 6K-iteration run made the model way too yappy, so I redid it at 1K iterations. That was better at switching topics and a more helpful assistant overall.
 
 ![](post_training.png)
 
@@ -97,4 +161,4 @@ CORE (a knowledge and reasoning benchmark) basically doesn't move after pre-trai
 
 ## What I'd do differently
 
-(1) Count tokens per step including world size and grad accumulation, and check shard counts before training. (2) Make the LR schedule resume-aware from day one. (3) Use proper row-level train/val splits for small post-training datasets instead of carrying over the "first shard is validation" trick from pre-training. (4) Track which shards have already been seen when resuming.
+(1) Count tokens per step including world size and grad accumulation, and check shard counts before training. (2) Mask the loss to assistant tokens from the first conversational stage, not just from SFT. (3) Make the LR schedule resume-aware from day one. (4) Use proper row-level train/val splits for small post-training datasets instead of carrying over the "first shard is validation" trick from pre-training.
