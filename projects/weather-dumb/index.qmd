@@ -40,7 +40,7 @@ A typical hour is off by about 7 °F (9 °F RMSE, R² 0.80). Shuffling the data 
 
 ## The features
 
-The model is an XGBoost regressor over 22 features. In each plot, the dots are the actual daily temperature against that feature, and the black line is the model's **partial dependence**: its average forecast as that one feature slides from low to high, with everything else left as it was. A flat line means the model barely cares. Five proxies do most of the work:
+The model is an XGBoost regressor over 22 features. Ranked by how much each one can move its forecast, five proxies do most of the work. Below that, each feature's raw relationship with the weather: one dot per day, with its correlation (r) to the actual temperature. Correlation only catches straight-line relationships, so U-shapes like grid load (heating in winter, AC in summer) score lower than they deserve.
 
 ![](swing.png)
 
