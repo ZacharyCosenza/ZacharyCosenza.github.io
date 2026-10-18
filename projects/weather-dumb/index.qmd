@@ -40,299 +40,188 @@ A typical hour is off by about 7 °F (9 °F RMSE, R² 0.80). Shuffling the data 
 
 ## The features
 
-The model is an XGBoost regressor over 22 features. For each one below: the raw relationship with temperature (one dot per day) and the **partial dependence**, the model's average forecast as that one feature slides from low to high with everything else left as it was. All partial dependence plots share the same scale, so a flat line means the model barely cares. Five proxies do most of the work:
+The model is an XGBoost regressor over 22 features. In each plot, the dots are the actual daily temperature against that feature, and the black line is the model's **partial dependence**: its average forecast as that one feature slides from low to high, with everything else left as it was. A flat line means the model barely cares. Five proxies do most of the work:
 
 ![](swing.png)
 
-### 311 heat complaints · 12.4 °F
+### 311 heat complaints
 
-:::: {.columns}
-::: {.column width="30%"}
-<video src="features/311_heat.mp4" autoplay loop muted playsinline width="100%"></video>
-:::
-::: {.column width="5%"}
-:::
-::: {.column width="65%"}
-Heat or hot-water complaints to 311 spike in winter when building heat fails during cold snaps. The model's favorite feature: going from near zero to a few hundred complaints a day drops the forecast by ~12 °F.
-:::
-::::
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+<video src="features/311_heat.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
+<img src="features/311_heat.png" style="width:300px;height:300px">
+</div>
+```
 
-![](features/311_heat.png)
+### NYC grid load
 
-### NYC grid load · 11.3 °F
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+<video src="features/nyiso_load_mw.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
+<img src="features/nyiso_load_mw.png" style="width:300px;height:300px">
+</div>
+```
 
-:::: {.columns}
-::: {.column width="30%"}
-<video src="features/nyiso_load_mw.mp4" autoplay loop muted playsinline width="100%"></video>
-:::
-::: {.column width="5%"}
-:::
-::: {.column width="65%"}
-Real-time electricity use in the NYC zone. The raw data is a beautiful U (heating in winter, AC in summer), but the model mostly reads high load as warm and leans on the other features, especially heat complaints, to tell a freezing high-load day from a sweltering one.
-:::
-::::
+### Bike counts
 
-![](features/nyiso_load_mw.png)
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+<video src="features/ped_bike.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
+<img src="features/ped_bike.png" style="width:300px;height:300px">
+</div>
+```
 
-### Bike counts · 8.9 °F
+### 3-hour change in grid load
 
-:::: {.columns}
-::: {.column width="30%"}
-<video src="features/ped_bike.mp4" autoplay loop muted playsinline width="100%"></video>
-:::
-::: {.column width="5%"}
-:::
-::: {.column width="65%"}
-DOT's citywide bike counters. Rain and cold keep New Yorkers off bikes, and once daily counts pass ~45K the forecast jumps by several degrees.
-:::
-::::
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+<video src="features/nyiso_delta_3h.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
+<img src="features/nyiso_delta_3h.png" style="width:300px;height:300px">
+</div>
+```
 
-![](features/ped_bike.png)
+### Mets win %
 
-### 3-hour change in grid load · 4.5 °F
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+<video src="features/mets_win_pct.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
+<img src="features/mets_win_pct.png" style="width:300px;height:300px">
+</div>
+```
 
-:::: {.columns}
-::: {.column width="30%"}
-<video src="features/nyiso_delta_3h.mp4" autoplay loop muted playsinline width="100%"></video>
-:::
-::: {.column width="5%"}
-:::
-::: {.column width="65%"}
-How fast grid load is changing captures momentum within the day. Moderate increases read as warmer; very large jumps read as colder.
-:::
-::::
+### Yankees win %
 
-![](features/nyiso_delta_3h.png)
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+<video src="features/yankees_win_pct.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
+<img src="features/yankees_win_pct.png" style="width:300px;height:300px">
+</div>
+```
 
-### Mets win % · 4.4 °F
+### Evictions
 
-:::: {.columns}
-::: {.column width="30%"}
-<video src="features/mets_win_pct.mp4" autoplay loop muted playsinline width="100%"></video>
-:::
-::: {.column width="5%"}
-:::
-::: {.column width="65%"}
-Season win percentage (missing in the off-season). Mostly a "baseball is happening" flag, and baseball happens when it's warm. The funniest part: a 70% win rate predicts *colder* weather, because the only time the Mets win that often is a hot streak in early April.
-:::
-::::
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+<video src="features/evictions.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
+<img src="features/evictions.png" style="width:300px;height:300px">
+</div>
+```
 
-![](features/mets_win_pct.png)
+### Bus ridership
 
-### Yankees win % · 1.9 °F
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+<video src="features/mta_bus.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
+<img src="features/mta_bus.png" style="width:300px;height:300px">
+</div>
+```
 
-:::: {.columns}
-::: {.column width="30%"}
-<video src="features/yankees_win_pct.mp4" autoplay loop muted playsinline width="100%"></video>
-:::
-::: {.column width="5%"}
-:::
-::: {.column width="65%"}
-Same idea, second team. Same early-season effect, just smaller.
-:::
-::::
+### Pedestrian counts
 
-![](features/yankees_win_pct.png)
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+<video src="features/ped_pedestrian.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
+<img src="features/ped_pedestrian.png" style="width:300px;height:300px">
+</div>
+```
 
-### Evictions · 1.6 °F
+### LIRR ridership
 
-:::: {.columns}
-::: {.column width="30%"}
-<video src="features/evictions.mp4" autoplay loop muted playsinline width="100%"></video>
-:::
-::: {.column width="5%"}
-:::
-::: {.column width="65%"}
-Marshal-executed evictions, weakly seasonal. The model nudges colder as evictions rise; I'd call this one mostly noise.
-:::
-::::
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+<video src="features/mta_lirr.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
+<img src="features/mta_lirr.png" style="width:300px;height:300px">
+</div>
+```
 
-![](features/evictions.png)
+### Subway ridership
 
-### Bus ridership · 1.5 °F
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+<video src="features/mta_subway.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
+<img src="features/mta_subway.png" style="width:300px;height:300px">
+</div>
+```
 
-:::: {.columns}
-::: {.column width="30%"}
-<video src="features/mta_bus.mp4" autoplay loop muted playsinline width="100%"></video>
-:::
-::: {.column width="5%"}
-:::
-::: {.column width="65%"}
-Daily bus boardings citywide. Busier days read slightly warmer.
-:::
-::::
+### Street flood depth
 
-![](features/mta_bus.png)
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+<video src="features/floodnet_max_depth_in.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
+<img src="features/floodnet_max_depth_in.png" style="width:300px;height:300px">
+</div>
+```
 
-### Pedestrian counts · 1.4 °F
+### Crashes
 
-:::: {.columns}
-::: {.column width="30%"}
-<video src="features/ped_pedestrian.mp4" autoplay loop muted playsinline width="100%"></video>
-:::
-::: {.column width="5%"}
-:::
-::: {.column width="65%"}
-DOT pedestrian counters. Heavy rain drives people indoors, and above ~4K counts the forecast ticks up.
-:::
-::::
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+<video src="features/crashes_total.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
+<img src="features/crashes_total.png" style="width:300px;height:300px">
+</div>
+```
 
-![](features/ped_pedestrian.png)
+### Critical restaurant violations
 
-### LIRR ridership · 1.2 °F
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+<video src="features/restaurant_critical.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
+<img src="features/restaurant_critical.png" style="width:300px;height:300px">
+</div>
+```
 
-:::: {.columns}
-::: {.column width="30%"}
-<video src="features/mta_lirr.mp4" autoplay loop muted playsinline width="100%"></video>
-:::
-::: {.column width="5%"}
-:::
-::: {.column width="65%"}
-Long Island Rail Road boardings. Snow wrecks LIRR service, and high ridership reads a bit warmer.
-:::
-::::
+### 311 snow complaints
 
-![](features/mta_lirr.png)
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+<video src="features/311_snow.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
+<img src="features/311_snow.png" style="width:300px;height:300px">
+</div>
+```
 
-### Subway ridership · 1.1 °F
+### Flood events
 
-:::: {.columns}
-::: {.column width="30%"}
-<video src="features/mta_subway.mp4" autoplay loop muted playsinline width="100%"></video>
-:::
-::: {.column width="5%"}
-:::
-::: {.column width="65%"}
-Daily subway entries. Rain and cold push riders underground and heat keeps them there, so it washes out to a small effect.
-:::
-::::
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+<video src="features/floodnet_events.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
+<img src="features/floodnet_events.png" style="width:300px;height:300px">
+</div>
+```
 
-![](features/mta_subway.png)
+### Slippery-pavement crashes
 
-### Street flood depth · 1.0 °F
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+<video src="features/crashes_slippery.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
+<img src="features/crashes_slippery.png" style="width:300px;height:300px">
+</div>
+```
 
-:::: {.columns}
-::: {.column width="30%"}
-<video src="features/floodnet_max_depth_in.mp4" autoplay loop muted playsinline width="100%"></video>
-:::
-::: {.column width="5%"}
-:::
-::: {.column width="65%"}
-The deepest street flooding recorded by FloodNet's IoT sensors. A rain signal, not a temperature one, so it barely moves the forecast.
-:::
-::::
+### Restaurant inspections
 
-![](features/floodnet_max_depth_in.png)
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+<video src="features/restaurant_inspections.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
+<img src="features/restaurant_inspections.png" style="width:300px;height:300px">
+</div>
+```
 
-### Crashes · 0.8 °F
+### HPD housing violations
 
-:::: {.columns}
-::: {.column width="30%"}
-<video src="features/crashes_total.mp4" autoplay loop muted playsinline width="100%"></video>
-:::
-::: {.column width="5%"}
-:::
-::: {.column width="65%"}
-NYPD-reported crashes citywide. Volume drops in heavy rain and snow as fewer people drive.
-:::
-::::
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
 
-![](features/crashes_total.png)
+<img src="features/hpd.png" style="width:300px;height:300px">
+</div>
+```
 
-### Critical restaurant violations · 0.7 °F
+### Congestion zone entries
 
-:::: {.columns}
-::: {.column width="30%"}
-<video src="features/restaurant_critical.mp4" autoplay loop muted playsinline width="100%"></video>
-:::
-::: {.column width="5%"}
-:::
-::: {.column width="65%"}
-Critical violations found during health inspections. Mostly tracks how many inspections happen.
-:::
-::::
-
-![](features/restaurant_critical.png)
-
-### 311 snow complaints · 0.6 °F
-
-:::: {.columns}
-::: {.column width="30%"}
-<video src="features/311_snow.mp4" autoplay loop muted playsinline width="100%"></video>
-:::
-::: {.column width="5%"}
-:::
-::: {.column width="65%"}
-Snow and ice complaints: a reliable sign that snow fell and stuck around, but rare enough that it hardly matters for temperature.
-:::
-::::
-
-![](features/311_snow.png)
-
-### Flood events · 0.5 °F
-
-:::: {.columns}
-::: {.column width="30%"}
-<video src="features/floodnet_events.mp4" autoplay loop muted playsinline width="100%"></video>
-:::
-::: {.column width="5%"}
-:::
-::: {.column width="65%"}
-How many FloodNet sensors went off. Spikes only in big storms.
-:::
-::::
-
-![](features/floodnet_events.png)
-
-### Slippery-pavement crashes · 0.4 °F
-
-:::: {.columns}
-::: {.column width="30%"}
-<video src="features/crashes_slippery.mp4" autoplay loop muted playsinline width="100%"></video>
-:::
-::: {.column width="5%"}
-:::
-::: {.column width="65%"}
-Crashes blamed on slippery pavement, a direct frozen-precipitation indicator that lingers for days after snow.
-:::
-::::
-
-![](features/crashes_slippery.png)
-
-### Restaurant inspections · 0.4 °F
-
-:::: {.columns}
-::: {.column width="30%"}
-<video src="features/restaurant_inspections.mp4" autoplay loop muted playsinline width="100%"></video>
-:::
-::: {.column width="5%"}
-:::
-::: {.column width="65%"}
-Inspectors go out less in bad weather, which makes for a very mild proxy.
-:::
-::::
-
-![](features/restaurant_inspections.png)
-
-### HPD housing violations · 0.3 °F
-
-Class A/B/C housing code violations. Included because why not; the model agrees they're useless.
-
-![](features/hpd.png)
-
-### Congestion zone entries · 0.0 °F
-
-:::: {.columns}
-::: {.column width="30%"}
-<video src="features/cz_total.mp4" autoplay loop muted playsinline width="100%"></video>
-:::
-::: {.column width="5%"}
-:::
-::: {.column width="65%"}
-Vehicles entering Manhattan's congestion zone. Perfectly flat because the data only starts in January 2025, after the training cutoff, so the model has never seen a single value. It rides along for the vibes.
-:::
-::::
-
-![](features/cz_total.png)
+```{=html}
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+<video src="features/cz_total.mp4" autoplay loop muted playsinline style="width:300px;height:300px;object-fit:cover;border-radius:4px"></video>
+<img src="features/cz_total.png" style="width:300px;height:300px">
+</div>
+```
 
 Thank you, NYC Open Data.
