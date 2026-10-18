@@ -3,9 +3,13 @@ title: "About"
 toc: false
 ---
 
-<!-- TODO: replace with your own bio. -->
+I'm Zach Cosenza, a data scientist and machine learning engineer in Brooklyn.
 
-I'm Zachary Cosenza. I build machine learning systems end to end, from data collection and modeling to
-deployment.
+Right now I'm a Data Science / Machine Learning Associate Consultant at ZS Associates, where I build production models that turn messy patient time-series into recommendations for field teams, plus agentic tools on top of them. Before that I was an applied ML scientist post-doc at Lawrence Livermore National Laboratory, working on multi-task and meta-learning models for protein–drug binding and fine-tuning biological language models. I did my PhD in Chemical Engineering at UC Davis, building Bayesian optimization methods to design cell culture media for cultivated meat with far fewer lab experiments (see [Publications](publications.qmd)), and was an invited speaker at the ICML 2022 active learning workshop. Before that, a B.S. in Chemical Engineering at the University of Minnesota.
 
-- GitHub: [ZacharyCosenza](https://github.com/ZacharyCosenza)
+On the side I like building things end to end, from LLM pre-training to small apps powered by open data. Those are under [Side Projects](index.qmd).
+
+- [Resume (PDF)](Cosenza_Resume_20261008.pdf)
+- [GitHub](https://github.com/ZacharyCosenza)
+- [LinkedIn](https://www.linkedin.com/in/zachary-cosenza-94886552)
+- [Google Scholar](https://scholar.google.com/citations?user=O0UNOpcAAAAJ&hl=en)

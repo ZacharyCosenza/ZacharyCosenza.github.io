@@ -2,7 +2,6 @@
 title: "NYC 311 forecasting"
 description: "Weekly 311 call forecasts for every NYC community district, with automated retraining and alerts."
 image: district_map.png
-categories: [Forecasting, XGBoost, MLOps]
 ---
 
 **Code:** [ZacharyCosenza/project-311](https://github.com/ZacharyCosenza/project-311) ·

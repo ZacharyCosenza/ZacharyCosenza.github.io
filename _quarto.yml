@@ -1,18 +1,24 @@
 project:
   type: website
   output-dir: _site
+  resources:
+    - Cosenza_Resume_20261008.pdf
 
 website:
   title: "Zachary Cosenza"
-  description: "Machine learning projects: recommendation, forecasting, LLM training and retrieval."
+  description: "Machine learning side projects and publications."
   navbar:
     left:
       - href: index.qmd
-        text: Projects
+        text: Side Projects
+      - href: publications.qmd
+        text: Publications
       - about.qmd
     right:
       - icon: github
         href: https://github.com/ZacharyCosenza
+      - icon: linkedin
+        href: https://www.linkedin.com/in/zachary-cosenza-94886552
   page-footer:
     center: "Built with [Quarto](https://quarto.org)"
 
