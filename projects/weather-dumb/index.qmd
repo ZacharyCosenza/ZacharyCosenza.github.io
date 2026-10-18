@@ -1,7 +1,7 @@
 ---
 title: "NYC proxy weather nowcaster"
 description: "Predicting New York's temperature from subway rides, 311 complaints and the Mets, a love letter to NYC Open Data."
-image: I_like_trains.gif
+image: shap.png
 resources:
   - "features/*.mp4"
 ---

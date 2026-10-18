@@ -158,7 +158,3 @@ The 6K-iteration run made the model way too yappy, so I redid it at 1K iteration
 ![](post_training.png)
 
 CORE (a knowledge and reasoning benchmark) basically doesn't move after pre-training, which makes sense: post-training changes how the model behaves, not what it knows. DPO does learn the preference task, beating chance on held-out UltraFeedback pairs by 10-15 points, though HH-RLHF barely clears it.
-
-## What I'd do differently
-
-(1) Count tokens per step including world size and grad accumulation, and check shard counts before training. (2) Mask the loss to assistant tokens from the first conversational stage, not just from SFT. (3) Make the LR schedule resume-aware from day one. (4) Use proper row-level train/val splits for small post-training datasets instead of carrying over the "first shard is validation" trick from pre-training.
