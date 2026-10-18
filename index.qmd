@@ -4,6 +4,7 @@ toc: false
 listing:
   contents:
     - projects/recommendation/index.qmd
+    - projects/perfume/index.qmd
     - projects/nyc-311/index.qmd
     - projects/llm-chat/index.qmd
     - projects/rose/index.qmd
