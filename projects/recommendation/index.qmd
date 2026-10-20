@@ -1,6 +1,6 @@
 ---
 title: "Event recommender"
-description: "An LLM agent builds the event catalog from web search; a Gaussian process ranks it by Expected Improvement."
+description: "An LLM agent builds the event catalog from web search; a Gaussian process classifier learns my taste and ranks events by P(like)."
 image: event_map.png
 ---
 
@@ -14,14 +14,17 @@ Every week I want to know what's going on near me that I'd actually like. The li
 flowchart LR
     S["queries + city + dates"] --> A["Claude agent<br/>refines web searches"]
     A --> D["event descriptions"]
-    D --> E["embedding"]
-    E --> GP["Gaussian process"]
-    GP --> EI["rank by Expected Improvement"]
-    EI --> U["I label 👍 / 👎"]
+    D --> C["context<br/>(day + event type)"]
+    D --> E["embedding of<br/>description + context"]
+    C --> E
+    E --> GP["Gaussian process<br/>classifier"]
+    GP --> R["rank by P(like)"]
+    R --> U["I label 👍 / 👎<br/>and edit context"]
     U --> GP
+    U --> C
 ```
 
-Everything below uses the real data behind the live app: 256 events from 13 searches across Chicago, New York, Monterrey, Reno and Philadelphia.
+Everything below uses the real data behind the live app: 265 events from 14 searches across Chicago, New York, Monterrey, Reno and Philadelphia.
 
 ## Building features with an agent
 
@@ -34,38 +37,38 @@ A search API gives you pages, not events. Ask for "comedy shows in Chicago this 
 }
 ```
 
-That description is the only feature the model ever sees, so prompting the agent is basically feature engineering. It costs ~1.5¢ of Claude tokens per event. A small local model (`all-MiniLM-L6-v2`) turns each description into a 384-number embedding. The model is never told which search found an event, but events from the same search still land near each other, which is what makes learning taste possible (like one event, its neighbors are good guesses).
+That description is the main feature the model sees, so prompting the agent is basically feature engineering. It costs ~1.5¢ of Claude tokens per event.
+
+**Context.** On top of the description, each event gets a short *context*. A cheap second pass (Claude Haiku, batches of 20 descriptions, about 4¢ per thousand events) pulls out the event's first date and what kind of event it is. Python turns the date into a weekday, which is more reliable than asking the LLM for one, and anything it can't find stays blank. The Seinfeld show above becomes `Friday, comedy show`. I can edit any context in the app to add what the description can't know, like "date night" or "too far from home".
+
+![](context.png)
+
+A small local model (`all-MiniLM-L6-v2`) then turns `description + " Context: " + context` into a 384-number embedding. The model is never told which search found an event, but events from the same search still land near each other, which is what makes learning taste possible (like one event, its neighbors are good guesses).
 
 ![](similarity.png)
 
-## Recommending with Bayesian optimization
+## Recommending with a Gaussian process classifier
 
-I've only labeled a few dozen events, way too little for the recommenders behind big apps. Instead we use a model that knows how sure it is, plus a rule for which event is most worth showing next. Every label I give makes the next pick better. This is called active learning. The real model works in all 384 dimensions, so to make it visible I squeeze everything onto one axis: similarity to "Oktoberfest Chicago in Fulton Market", an event I liked.
+I've only labeled a few dozen events, way too little for the recommenders behind big apps. Instead I use a Gaussian process classifier: it learns from a handful of labels, gives probabilities instead of a hard yes/no, and naturally becomes less confident about events unlike anything I've labeled. Every label I give makes the next pick better. The real model works in all 384 dimensions, so to make it visible I squeeze everything onto one axis: similarity to "Oktoberfest Chicago in Fulton Market", an event I liked.
 
-**Step 1: labels.** Each dot is an event I've rated. There's a pattern but it's noisy: below 0.4 dislikes beat likes 19 to 5, above 0.5 it flips to 12 to 5.
+**Step 1: labels.** Each dot is an event with its label: 👍 (+1), neutral (0, the default) or 👎 (−1). There's a pattern but it's noisy: in the least Oktoberfest-like third, dislikes beat likes 15 to 4, and in the most Oktoberfest-like third likes lead 23 to 12.
 
 ![](step1_labels.png)
 
-**Step 2: a best guess with error bars.** A Gaussian process fits a smooth curve through the labels (black, rising from −0.28 to +0.47) and, more importantly, an uncertainty band (gray) that's wide where it has few labels. The model knowing what it doesn't know is what everything after this relies on.
+**Step 2: probabilities, not a score.** The labels are categories, so instead of regressing on −1/0/1 the model is a classifier: one Gaussian process per class (one-vs-rest), combined into P(dislike), P(neutral) and P(like) for every event. On this axis P(like) climbs from about 2% to 60% as events get more Oktoberfest-like. P(dislike) barely moves (~15%): my dislikes aren't about this direction at all, which is exactly why the real model needs all 384 dimensions.
 
-![](step2_gp.png)
+![](step2_classifier.png)
 
-**Step 3: Expected Improvement.** For any unrated event the model gives a mean and a std, so picture a bell curve of possible outcomes. My best rating is +1. EI asks how far past +1 this event could land, averaged over the curve (yellow). Three real unrated events:
+**Step 3: does the context help?** To check, I cross-validated the classifier on embeddings of the description alone vs. description + context. Honestly, not yet. Both find likes about equally well (ROC-AUC 0.89 vs 0.88) and dislikes a hair better with context (0.73 vs 0.74), all within noise. That makes sense: the auto-extracted context is pulled *from* the description, so it mostly repeats what's already there. Where it should pay off is the edits, the things only I know about an event.
 
-![](step3_ei.png)
+![](step3_context_cv.png)
 
-B (a Chicago Oktoberfest guide) has the highest mean but the model is fairly sure about it, so little of the curve gets past +1 (EI 0.018). A (chamber music in Reno) has a lower mean, but the model has never seen anything from Reno, so the curve is wider (EI 0.033, the top unrated event). C is predicted to be a dislike (EI 0.002). So EI picks A over B: "probably good and I'd learn a lot" beats "probably good and I already know roughly how good".
+**Step 4: close the loop.** The app ranks every event by P(like): show the most likely 👍, I rate it, retrain, repeat. To check this works I replayed it on all 265 events (30 liked), hiding each rating until the model "showed" me that event. Starting from 5 random labels, ranking by P(like) found 11 likes in 40 picks vs 4 for random order, more than 2.5× as many. Right now the top unrated picks are a Chicago Oktoberfest street fest (54%), Don Giovanni at the Lyric Opera (45%) and the second Seinfeld show (35%).
 
-**Step 4: rank everything.** Every unrated event by mean (right = exploit) and std (up = explore), with lines of equal EI. The bottom group is events I rated neutral, which the model has already learned from. The top group is mostly new. All five top picks are classical music or opera, four of them in Reno and Monterrey where I haven't rated anything. I like classical in Chicago, so the model bets I'll like it elsewhere but isn't sure, and that uncertainty is what pushes them up.
-
-![](step4_tradeoff.png)
-
-**Step 5: close the loop.** Show the top-EI event, I rate it, retrain, repeat. To check this works I replayed it on the 158 events the model was trained on (30 liked), hiding each rating until the model "showed" me that event. Starting from 5 random labels, EI found 14.8 likes in 40 picks vs 6.9 for random order. Honestly, just picking the highest mean does about as well here (14.5), since this replay only measures finding likes among events I've already rated. Where EI should earn its keep is spending some picks on unfamiliar stuff (like a new city) so the model doesn't get stuck. This replay can't measure that, and it reuses the full model's fitted kernel so it's a bit optimistic for all three.
-
-![](step5_replay.png)
+![](step4_replay.png)
 
 ## The app
 
-The app shows the same thing in 2D: events laid out by similarity (UMAP) over a heat map of EI. Clicking an event opens a card that highlights which words in its description push the prediction up (blue) or down (red), and the table lists every event with its EI, mean and std.
+The app shows the same thing in 2D: events laid out by similarity (UMAP) over a heat map of P(like). Clicking an event opens a card with its context (editable) and highlights which words push P(like) up (blue) or down (red). In the events table I label with a single click on the 👍 or 👎 box and can edit any event's context in place; editing a context re-embeds that event immediately, and the next retrain picks it up.
 
-![](event_map.png){width=70%}
+![](event_map.png)
