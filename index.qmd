@@ -3,6 +3,7 @@ title: "Side Projects"
 toc: false
 listing:
   contents:
+    - projects/foundation-model-bo/index.qmd
     - projects/recommendation/index.qmd
     - projects/perfume/index.qmd
     - projects/nyc-311/index.qmd
