@@ -38,6 +38,8 @@ A search API gives you pages, not events. Ask for "comedy shows in Chicago this 
 
 That description is the main feature the model sees, so prompting the agent is basically feature engineering. It costs ~1.5¢ of Claude tokens per event.
 
+Every search the agent makes is logged: the prompt it was given, each query it ran in order, and which query surfaced each event (it reports that, and it's kept only if it matches a query it actually ran). For example, "comedy shows" in New York became "comedy shows in New York City November 9, 2026" and then "Stand Up for Heroes David Geffen Hall November 9 2026 New York Comedy Festival". Linking queries to the events I end up liking is the groundwork for learning better searches than the same ten defaults every day.
+
 **Context.** On top of the description, each event gets a short *context*. A cheap second pass (Claude Haiku, batches of 20 descriptions, about 5¢ per thousand events) pulls out four things: the event's first date, what kind of event it is, a theme from a fixed list (music, comedy, theater, ...) and the city. Python turns the date into a weekday, which is more reliable than asking the LLM for one, and anything it can't find stays blank. The Seinfeld show above becomes `Friday, comedy show, comedy, Chicago`.
 
 Theme and city used to come straight from the search form, which breaks as soon as a query is something like "concerts NYC" or the location is "N/A". Now they come from the description itself; the search location is only a hint (and can be N/A). I can edit any context in the app to add what the description can't know, like "date night" or "too far from home". The app remembers the last auto-extracted context, so a re-extraction never overwrites my edits.
@@ -48,7 +50,7 @@ A small local model (`all-MiniLM-L6-v2`) then turns `description + " Context: " 
 
 ![](similarity.png)
 
-**Cleaning up.** Web search returns the same event many times (the venue's page, two ticket sellers, a news story) and plenty of pages that aren't one event at all (venue calendars, "things to do" roundups, Facebook pages). Duplicates are cheap to shortlist with the embeddings: any two events with cosine similarity ≥ 0.80 are candidates. But similarity can't make the call by itself. "Blackhawks vs Penguins" and "Blackhawks vs Hurricanes" score 0.93 and are different games, while the same theater run on two sites can score as low as 0.82. So Haiku looks at each candidate group, decides which listings are the same event, and picks the one to keep (the organizer's or venue's own page if there is one). The rest are deleted, and a 👍 or 👎 on a deleted copy moves to the kept one; if the copies disagree, the event goes back into the swipe queue. On the live data this merged 26 listings into 17 events, e.g. 6 Great Italian Festival listings into 1. This matters for the model too: before merging, 10 duplicate groups had different labels on copies of the same event.
+**Cleaning up.** Web search returns the same event many times (the venue's page, two ticket sellers, a news story) and plenty of pages that aren't one event at all (venue calendars, "things to do" roundups, Facebook pages). Duplicates are cheap to shortlist with the embeddings: any two events with cosine similarity ≥ 0.70 are candidates. But similarity can't make the call by itself. "Blackhawks vs Penguins" and "Blackhawks vs Hurricanes" score 0.93 and are different games, while the same hockey game on the venue's page and a news story scores only 0.78. So Haiku looks at each candidate group, decides which listings are the same event, and picks the one to keep (the organizer's or venue's own page if there is one). The rest are deleted. On the live data this deleted 26 duplicate listings of 17 events; the Great Italian Festival alone had five. That matters for the model too: before, 10 of those events had different labels on different copies.
 
 The same Haiku pass that writes the context also flags *generic* listings, and those are deleted before they're ever stored. The flag is strict and sometimes catches a real show, but I'd rather see fewer, cleaner events.
 
@@ -74,14 +76,17 @@ I've only labeled a few dozen events, way too little for the recommenders behind
 
 ## The app
 
-The model only gets better if I keep rating, so the app is built around making that quick. It's a private web app that installs on my Android phone, with three tabs:
+The model only gets better if I keep rating, so the app is built around making that quick. It's a private web app that installs on my Android phone, with four tabs:
 
 ![](app_swipe.png)
 
-- **Swipe**: one unrated event at a time, Tinder style. Right is 👍, left 👎, up 😐, with undo and skip. Each card shows P(like) and the description coloured by which words push P(like) up (blue) or down (red). Since 0 is also the default label, the app tracks which neutrals I actually chose, so an explicit 😐 leaves the queue and an untouched event stays in it.
+- **Swipe**: one unrated event at a time, Tinder style. Right is 👍, left 👎, up 😐, with undo and skip. Each card shows P(like) and the description coloured by which words push P(like) up (blue) or down (red). Since 0 is also the default label, the app tracks which neutrals I actually chose, so an explicit 😐 leaves the queue and an untouched event stays in it. "💬 Ask about it" opens the same Q&A as Matches on any card, before I decide.
+- **Matches**: five events a day, sampled toward high P(like), that I can ask about ("what's on the program?", "is it good for a date?"). Background searches are gathered ahead, so most answers come from those notes in a couple of seconds; when they don't cover it, the answer searches the web live. A 👍 or 👎 on a match finishes it, and the card leaves for the day. The Q&As are kept, as raw material for feedback richer than 👍/👎.
 - **Search**: run a new search (queries, location, dates, with a cost estimate), follow it live, and see past runs.
 - **Analytics**: the event map (similar events sit together over a P(like) heat map), where tapping an event opens the same coloured card with its context (editable); the calibration plot; and a table of every event for going back and fixing labels or context. Editing a context re-embeds that event immediately.
 
 ![](app_tabs.png)
 
-Once a day the app retrains on my latest ratings, searches the default queries for the next week in New York, and pre-computes the word colouring for every new card, so there's a fresh stack waiting each morning.
+![](app_ask.png)
+
+Once a day the app retrains on my latest ratings, searches the default queries for the next week in New York, pre-computes the word colouring for every new card, and picks the day's matches with their background notes, so there's a fresh stack waiting each morning.
