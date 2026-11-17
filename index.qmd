@@ -3,6 +3,7 @@ title: "Side Projects"
 toc: false
 listing:
   contents:
+    - projects/knowledge-graph-agent/index.qmd
     - projects/foundation-model-bo/index.qmd
     - projects/recommendation/index.qmd
     - projects/perfume/index.qmd
